@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
@@ -24,6 +26,7 @@ class MapFragment : Fragment() {
     private val ZOOM = 17f
     private var isCoordinatesSets = false
     private lateinit var map: SupportMapFragment
+    private lateinit var viewModel: MainViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,7 +40,12 @@ class MapFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         map = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        getLocation()
+        viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+        viewModel.places.observe(viewLifecycleOwner, Observer {
+            Log.i("geo",it.toString())
+            Toast.makeText(activity, "Данные загружены", Toast.LENGTH_SHORT).show()
+        })
+
 
     }
 
@@ -76,6 +84,7 @@ class MapFragment : Fragment() {
         Log.i("geo","$myLatitude - $myLongitude")
         addCurrentLocationToMap(!isCoordinatesSets)
         isCoordinatesSets = true
+        viewModel.searchPlaces(myLatitude,myLongitude,"coffee")
     }
 
 
