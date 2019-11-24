@@ -50,4 +50,6 @@ dependencies {
     // ViewModel and LiveData
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
 
+    implementation 'androidx.preference:preference:1.1.0'
+
 }

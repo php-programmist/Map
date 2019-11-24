@@ -68,7 +68,7 @@ class MapFragment : Fragment() {
             map.setOnCameraIdleListener {
                 Log.i("geo","Camera stops: ${it.cameraPosition}")
 
-                viewModel.searchPlaces(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude,"coffee").observe(viewLifecycleOwner, Observer { placesResponse ->
+                viewModel.searchPlaces(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude).observe(viewLifecycleOwner, Observer { placesResponse ->
                     Log.i("geo","Data changed:")
                     //Log.i("geo",placesResponse.toString())
                     map.clear()

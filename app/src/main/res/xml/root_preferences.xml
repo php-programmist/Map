@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory app:title="@string/preferences">
+        <ListPreference
+            android:dialogTitle="@string/chose_type_label"
+            android:entries="@array/type_preference_titles"
+            android:entryValues="@array/type_preference_values"
+            android:key="section"
+            android:summary="@string/chose_type_summary"
+            android:title="@string/chose_type_label" />
+    </PreferenceCategory>
+</androidx.preference.PreferenceScreen>

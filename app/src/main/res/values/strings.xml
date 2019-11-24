@@ -6,4 +6,7 @@
 
     <string name="hello_blank_fragment">Settings of picker</string>
     <string name="title_activity_maps">Map</string>
+    <string name="preferences">Preferences</string>
+    <string name="chose_type_summary">Chose type of establishment</string>
+    <string name="chose_type_label">Chose type</string>
 </resources>

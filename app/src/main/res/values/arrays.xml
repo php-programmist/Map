@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="type_preference_titles">
+        <item>Coffee</item>
+        <item>Food</item>
+        <item>Shop</item>
+        <item>Trending</item>
+    </string-array>
+    <string-array name="type_preference_values">
+        <item>coffee</item>
+        <item>food</item>
+        <item>shop</item>
+        <item>trending</item>
+    </string-array>
+</resources>
