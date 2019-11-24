@@ -14,16 +14,19 @@ import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import mumayank.com.airlocationlibrary.AirLocation
+import ru.phpprogrammist.map.data.PlacesResponse
 
 
 class MapFragment : Fragment() {
 
     private var myLatitude:Double = 55.7537
     private var myLongitude:Double = 37.6198
-    private val ZOOM = 17f
+    private val zoom = 15f
     private var isCoordinatesSets = false
     private lateinit var map: SupportMapFragment
     private lateinit var viewModel: MainViewModel
@@ -41,10 +44,8 @@ class MapFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         map = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
-        viewModel.places.observe(viewLifecycleOwner, Observer {
-            Log.i("geo",it.toString())
-            Toast.makeText(activity, "Данные загружены", Toast.LENGTH_SHORT).show()
-        })
+        Log.i("geo","View Created")
+
 
 
     }
@@ -54,23 +55,52 @@ class MapFragment : Fragment() {
         super.onResume()
     }
 
-    private fun addCurrentLocationToMap(moveCamera:Boolean = false) {
+    private fun initMap() {
         map.getMapAsync {
             val map = it
             val currentLocation = LatLng(myLatitude, myLongitude)
 
             map.mapType = GoogleMap.MAP_TYPE_NORMAL
-            //map.addMarker(MarkerOptions().position(currentLocation).title("My location"))
-            if (moveCamera) {
-                moveCameraToCurrentPosition(map, currentLocation)
+
+
+            moveCameraToCurrentPosition(map, currentLocation)
+
+            map.setOnCameraIdleListener {
+                Log.i("geo","Camera stops: ${it.cameraPosition}")
+
+                viewModel.searchPlaces(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude,"coffee").observe(viewLifecycleOwner, Observer { placesResponse ->
+                    Log.i("geo","Data changed:")
+                    //Log.i("geo",placesResponse.toString())
+                    map.clear()
+                    map.addMarker(MarkerOptions().position(currentLocation).title("My location").icon(
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                        )
+                    )
+                    addMarkersFromRequest(placesResponse)
+                })
             }
         }
+    }
+
+    private fun addMarkersFromRequest(placesResponse: PlacesResponse){
+        map.getMapAsync {
+            Log.i("geo","Найдено заведений - ${placesResponse.response.groups[0].items.size}")
+            for(item in placesResponse.response.groups[0].items){
+                addMarkerToMap(it,item.venue.location.lat,item.venue.location.lng,item.venue.name)
+            }
+        }
+    }
+
+    private fun addMarkerToMap(map: GoogleMap,lat:Double, lng:Double, name: String){
+        //Log.i("geo","Маркер - $name: $lat,$lng")
+        val location = LatLng(lat, lng)
+        map.addMarker(MarkerOptions().position(location).title(name))
     }
 
     private fun moveCameraToCurrentPosition(map: GoogleMap,currentLocation:LatLng ){
         val cameraPosition = CameraPosition.Builder()
             .target(currentLocation)
-            .zoom(ZOOM)
+            .zoom(zoom)
             .build()
         val cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition)
         map.moveCamera(cameraUpdate)
@@ -82,9 +112,8 @@ class MapFragment : Fragment() {
         myLatitude = location.latitude
         myLongitude = location.longitude
         Log.i("geo","$myLatitude - $myLongitude")
-        addCurrentLocationToMap(!isCoordinatesSets)
+        initMap()
         isCoordinatesSets = true
-        viewModel.searchPlaces(myLatitude,myLongitude,"coffee")
     }
 
 
@@ -100,7 +129,7 @@ class MapFragment : Fragment() {
                 override fun onFailed(locationFailedEnum: AirLocation.LocationFailedEnum) {
                     Toast.makeText(activity!!,"$locationFailedEnum", Toast.LENGTH_LONG).show()
                     Log.i("geo","Failed location: $locationFailedEnum")
-                    addCurrentLocationToMap(true)
+                    initMap()
                 }
             })
     }

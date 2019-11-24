@@ -11,16 +11,21 @@ class PlacesRepository(private val apiService: ApiService) {
     private val clientId = "JLMXOP3VWT5E3WKUWG1MRD1OLTX0VNX1J5SLV205U3GAFVSS"
     private val clientSecret = "RDVGOPEJDXGMPZUESRFU3JT0IIY5NGX4CBFT0X1W3J4TNNCW"
     private val version = 20180630
+    val placesData: MutableLiveData<PlacesResponse> = MutableLiveData()
     fun getPlaces( lat:Double, lng:Double, section: String): MutableLiveData<PlacesResponse> {
-        val placesData: MutableLiveData<PlacesResponse> = MutableLiveData()
-         apiService.getPlaces("$lat,$lng",section,clientId,clientSecret,version).enqueue(object :
+        Log.i("geo","Request places send")
+        apiService.getPlaces("$lat,$lng",section,clientId,clientSecret,version).enqueue(object :
              Callback<PlacesResponse> {
              override fun onResponse(
                  call: Call<PlacesResponse>,
                  response: Response<PlacesResponse>
              ) {
+                 Log.i("geo","Got response")
                  if (response.isSuccessful) {
+                     Log.i("geo","Got successful response")
                      placesData.value = response.body()
+                 }else{
+                     Log.e("geo","Got not successful response: $response")
                  }
              }
 
@@ -28,7 +33,7 @@ class PlacesRepository(private val apiService: ApiService) {
                  call: Call<PlacesResponse>,
                  t: Throwable
              ) {
-                 Log.i("error_api","Error during PlacesRepository:getPlaces: {${t.message}}")
+                 Log.e("geo","Error during PlacesRepository:getPlaces: {${t.message}}")
                  //PlacesResponse.setValue(null)
              }
          })

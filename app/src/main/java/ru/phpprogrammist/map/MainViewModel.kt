@@ -7,10 +7,8 @@ import ru.phpprogrammist.map.api.PlacesRepositoryProvider
 import ru.phpprogrammist.map.data.PlacesResponse
 
 class MainViewModel(application: Application) : AndroidViewModel(application){
-    var places = MutableLiveData<PlacesResponse>()
-
-    fun searchPlaces(lat:Double, lng:Double, section: String){
+    fun searchPlaces(lat:Double, lng:Double, section: String): MutableLiveData<PlacesResponse> {
         val repository = PlacesRepositoryProvider.providePlacesRepository()
-        places = repository.getPlaces(lat, lng, section)
+        return repository.getPlaces(lat, lng, section)
     }
 }
