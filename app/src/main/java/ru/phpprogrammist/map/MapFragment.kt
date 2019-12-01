@@ -73,7 +73,7 @@ class MapFragment : Fragment() {
                     //Log.i("geo",placesResponse.toString())
                     map.clear()
                     map.addMarker(MarkerOptions().position(currentLocation).title("My location").icon(
-                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
                         )
                     )
                     addMarkersFromRequest(placesResponse)
