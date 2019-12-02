@@ -10,6 +10,7 @@ import ru.phpprogrammist.map.data.PlacesResponse
 interface ApiService {
     @GET("explore")
     fun getPlaces(@Query("ll") latLng:  String,
+                  @Query("radius") radius: Int,
                   @Query("section") section: String,
                   @Query("client_id") client_id: String,
                   @Query("client_secret") client_secret: String,

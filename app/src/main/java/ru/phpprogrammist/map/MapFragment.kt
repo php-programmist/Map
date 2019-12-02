@@ -20,13 +20,15 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import mumayank.com.airlocationlibrary.AirLocation
 import ru.phpprogrammist.map.data.PlacesResponse
+import ru.phpprogrammist.map.helpers.Geo
 
 
 class MapFragment : Fragment() {
 
-    private var myLatitude:Double = 55.7537
-    private var myLongitude:Double = 37.6198
+    private var myLatitude: Double = 55.7537
+    private var myLongitude: Double = 37.6198
     private val zoom = 15f
+    private val radius = 10000
     private var isCoordinatesSets = false
     private lateinit var map: SupportMapFragment
     private lateinit var viewModel: MainViewModel
@@ -44,8 +46,7 @@ class MapFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         map = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
-        Log.i("geo","View Created")
-
+        Log.i("geo", "View Created")
 
 
     }
@@ -59,45 +60,58 @@ class MapFragment : Fragment() {
         map.getMapAsync {
             val map = it
             val currentLocation = LatLng(myLatitude, myLongitude)
-
+            var lastLoadedPosition = LatLng(myLatitude, myLongitude)
             map.mapType = GoogleMap.MAP_TYPE_NORMAL
-
+            map.addMarker(
+                MarkerOptions().position(currentLocation).title("My location").icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                )
+            )
 
             moveCameraToCurrentPosition(map, currentLocation)
-
-            map.setOnCameraIdleListener {
-                Log.i("geo","Camera stops: ${it.cameraPosition}")
-
-                viewModel.searchPlaces(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude).observe(viewLifecycleOwner, Observer { placesResponse ->
-                    Log.i("geo","Data changed:")
-                    //Log.i("geo",placesResponse.toString())
-                    map.clear()
-                    map.addMarker(MarkerOptions().position(currentLocation).title("My location").icon(
-                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                        )
-                    )
-                    addMarkersFromRequest(placesResponse)
-                })
+            loadPlaces(map)
+            map.setOnCameraMoveListener {
+                val distance = Geo.calculateDistance(lastLoadedPosition,map.cameraPosition.target)
+                if(distance > radius * 0.5){
+                    lastLoadedPosition = map.cameraPosition.target
+                    Log.i("geo", "Camera out of half radius: ${it.cameraPosition}. Distance - $distance")
+                    loadPlaces(map)
+                }
             }
         }
     }
 
-    private fun addMarkersFromRequest(placesResponse: PlacesResponse){
+    private fun loadPlaces(map: GoogleMap) {
+        viewModel.searchPlaces(
+            map.cameraPosition.target.latitude,
+            map.cameraPosition.target.longitude,
+            radius
+        ).observe(viewLifecycleOwner, Observer { placesResponse ->
+            addMarkersFromRequest(placesResponse)
+        })
+    }
+
+    private fun addMarkersFromRequest(placesResponse: PlacesResponse) {
         map.getMapAsync {
-            Log.i("geo","Найдено заведений - ${placesResponse.response.groups[0].items.size}")
-            for(item in placesResponse.response.groups[0].items){
-                addMarkerToMap(it,item.venue.location.lat,item.venue.location.lng,item.venue.name)
+            Log.i("geo", "Найдено заведений - ${placesResponse.response.groups[0].items.size}")
+            for (item in placesResponse.response.groups[0].items) {
+                addMarkerToMap(
+                    it,
+                    item.venue.location.lat,
+                    item.venue.location.lng,
+                    item.venue.name
+                )
             }
         }
     }
 
-    private fun addMarkerToMap(map: GoogleMap,lat:Double, lng:Double, name: String){
+    private fun addMarkerToMap(map: GoogleMap, lat: Double, lng: Double, name: String) {
         //Log.i("geo","Маркер - $name: $lat,$lng")
         val location = LatLng(lat, lng)
         map.addMarker(MarkerOptions().position(location).title(name))
     }
 
-    private fun moveCameraToCurrentPosition(map: GoogleMap,currentLocation:LatLng ){
+    private fun moveCameraToCurrentPosition(map: GoogleMap, currentLocation: LatLng) {
         val cameraPosition = CameraPosition.Builder()
             .target(currentLocation)
             .zoom(zoom)
@@ -107,28 +121,27 @@ class MapFragment : Fragment() {
     }
 
 
-
-    fun setCoordinates(location:Location){
+    fun setCoordinates(location: Location) {
         myLatitude = location.latitude
         myLongitude = location.longitude
-        Log.i("geo","$myLatitude - $myLongitude")
+        Log.i("geo", "$myLatitude - $myLongitude")
         initMap()
         isCoordinatesSets = true
     }
 
 
     private fun getLocation() {
-         AirLocation(activity!!,
+        AirLocation(activity!!,
             shouldWeRequestPermissions = true,
             shouldWeRequestOptimization = true,
-            callbacks = object: AirLocation.Callbacks {
+            callbacks = object : AirLocation.Callbacks {
                 override fun onSuccess(location: Location) {
                     setCoordinates(location)
                 }
 
                 override fun onFailed(locationFailedEnum: AirLocation.LocationFailedEnum) {
-                    Toast.makeText(activity!!,"$locationFailedEnum", Toast.LENGTH_LONG).show()
-                    Log.i("geo","Failed location: $locationFailedEnum")
+                    Toast.makeText(activity!!, "$locationFailedEnum", Toast.LENGTH_LONG).show()
+                    Log.i("geo", "Failed location: $locationFailedEnum")
                     initMap()
                 }
             })

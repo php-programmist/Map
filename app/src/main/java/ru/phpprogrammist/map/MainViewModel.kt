@@ -16,8 +16,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
-    fun searchPlaces(lat:Double, lng:Double): MutableLiveData<PlacesResponse> {
+    fun searchPlaces(lat:Double, lng:Double,radius:Int): MutableLiveData<PlacesResponse> {
         val repository = PlacesRepositoryProvider.providePlacesRepository()
-        return repository.getPlaces(lat, lng, getSection())
+        return repository.getPlaces(lat, lng,radius, getSection())
     }
 }
