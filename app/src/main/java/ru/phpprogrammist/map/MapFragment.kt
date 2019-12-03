@@ -55,6 +55,11 @@ class MapFragment : Fragment(), CoroutineScope {
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraMovementJob?.cancel()
+    }
+
     override fun onResume() {
         getLocation()
         super.onResume()
