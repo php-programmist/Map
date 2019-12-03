@@ -18,18 +18,22 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlinx.coroutines.*
 import mumayank.com.airlocationlibrary.AirLocation
 import ru.phpprogrammist.map.data.PlacesResponse
 import ru.phpprogrammist.map.helpers.Geo
+import kotlin.coroutines.CoroutineContext
 
 
-class MapFragment : Fragment() {
-
+class MapFragment : Fragment(), CoroutineScope {
+    override val coroutineContext: CoroutineContext = Dispatchers.Main
+    var cameraMovementJob: Job? = null
     private var myLatitude: Double = 55.7537
     private var myLongitude: Double = 37.6198
     private val zoom = 15f
     private val radius = 10000
     private var isCoordinatesSets = false
+    private lateinit var lastLoadedPosition: LatLng
     private lateinit var map: SupportMapFragment
     private lateinit var viewModel: MainViewModel
 
@@ -60,7 +64,7 @@ class MapFragment : Fragment() {
         map.getMapAsync {
             val map = it
             val currentLocation = LatLng(myLatitude, myLongitude)
-            var lastLoadedPosition = LatLng(myLatitude, myLongitude)
+            lastLoadedPosition = LatLng(myLatitude, myLongitude)
             map.mapType = GoogleMap.MAP_TYPE_NORMAL
             map.addMarker(
                 MarkerOptions().position(currentLocation).title("My location").icon(
@@ -71,11 +75,14 @@ class MapFragment : Fragment() {
             moveCameraToCurrentPosition(map, currentLocation)
             loadPlaces(map)
             map.setOnCameraMoveListener {
-                val distance = Geo.calculateDistance(lastLoadedPosition,map.cameraPosition.target)
-                if(distance > radius * 0.5){
-                    lastLoadedPosition = map.cameraPosition.target
-                    Log.i("geo", "Camera out of half radius: ${it.cameraPosition}. Distance - $distance")
-                    loadPlaces(map)
+                cameraMovementJob?.cancel()
+                cameraMovementJob = launch(Dispatchers.Main) {
+                    delay(1000)
+                    val distance = Geo.calculateDistance(lastLoadedPosition,map.cameraPosition.target)
+                    if(distance > radius * 0.5){
+                        Log.i("geo", "Camera out of half radius: ${it.cameraPosition}. Distance - $distance")
+                        loadPlaces(map)
+                    }
                 }
             }
         }
@@ -87,6 +94,7 @@ class MapFragment : Fragment() {
             map.cameraPosition.target.longitude,
             radius
         ).observe(viewLifecycleOwner, Observer { placesResponse ->
+            lastLoadedPosition = map.cameraPosition.target
             addMarkersFromRequest(placesResponse)
         })
     }
